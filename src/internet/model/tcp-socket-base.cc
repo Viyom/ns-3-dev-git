@@ -54,6 +54,7 @@
 #include "tcp-option-sack-permitted.h"
 #include "tcp-option-sack.h"
 #include "tcp-congestion-ops.h"
+#include "tcp-recovery-ops.h"
 
 #include <math.h>
 #include <algorithm>
@@ -387,6 +388,11 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
   if (sock.m_congestionControl)
     {
       m_congestionControl = sock.m_congestionControl->Fork ();
+    }
+
+  if (sock.m_recoveryOps)
+    {
+      m_recoveryOps = sock.m_recoveryOps->Fork ();
     }
 
   bool ok;
@@ -1487,7 +1493,7 @@ TcpSocketBase::EnterRecovery ()
   // compatibility with old ns-3 versions
   uint32_t bytesInFlight = m_sackEnabled ? BytesInFlight () : BytesInFlight () + m_tcb->m_segmentSize;
   m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, bytesInFlight);
-  m_tcb->m_cWnd = m_tcb->m_ssThresh;
+  m_recoveryOps->EnterRecovery (m_tcb);
   m_cWndInfl = m_tcb->m_ssThresh + m_dupAckCount * m_tcb->m_segmentSize;
 
   NS_LOG_INFO (m_dupAckCount << " dupack. Enter fast recovery mode." <<
@@ -1547,7 +1553,13 @@ TcpSocketBase::DupAck ()
       NS_LOG_DEBUG ("CA_OPEN -> CA_DISORDER");
     }
 
-  if (m_tcb->m_congState == TcpSocketState::CA_DISORDER)
+  if (m_tcb->m_congState == TcpSocketState::CA_RECOVERY)
+    { // Increase cwnd for every additional dupack (RFC2582, sec.3 bullet #3)
+      m_recoveryOps->DoRecovery ();
+      NS_LOG_INFO (m_dupAckCount << " Dupack received in fast recovery mode."
+                   "Increase cwnd to " << m_tcb->m_cWnd);
+    }
+  else if (m_tcb->m_congState == TcpSocketState::CA_DISORDER)
     {
       // RFC 6675, Section 5, continuing:
       // ... and take the following steps:
@@ -1747,6 +1759,7 @@ TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpd
           if (segsAcked >= 1)
             {
               m_cWndInfl += m_tcb->m_segmentSize;
+              m_recoveryOps->DoRecovery ();
             }
 
           // This partial ACK acknowledge the fact that one segment has been
@@ -1873,6 +1886,7 @@ TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpd
               // For SACK connections, we maintain the cwnd = ssthresh. In fact,
               // this ACK was received in RECOVERY phase, not in OPEN. So we
               // are not allowed to increase the window
+              m_recoveryOps->ExitRecovery ();
               NS_LOG_DEBUG ("Leaving Fast Recovery; BytesInFlight() = " <<
                             BytesInFlight () << "; cWnd = " << m_tcb->m_cWnd);
             }
@@ -3899,6 +3913,13 @@ TcpSocketBase::SetCongestionControlAlgorithm (Ptr<TcpCongestionOps> algo)
 {
   NS_LOG_FUNCTION (this << algo);
   m_congestionControl = algo;
+}
+
+void
+TcpSocketBase::SetRecoveryAlgorithm (Ptr<TcpRecoveryOps> recovery)
+{
+  NS_LOG_FUNCTION (this << recovery);
+  m_recoveryOps = recovery;
 }
 
 Ptr<TcpSocketBase>
