@@ -21,12 +21,25 @@ Here are the important abstract base classes:
 
 * class :cpp:class:`UdpSocket`: This is defined in:
   ``src/internet/model/udp-socket.{cc,h}``
-  This is an abstract base class of all UDP sockets. This class exists solely for
-  hosting ``UdpSocket`` attributes that can be reused across different implementations,
-  and for declaring UDP-specific multicast API.
+  This is an abstract base class of all UDP sockets. This class exists solely
+  for hosting ``UdpSocket`` attributes that can be reused across different
+  implementations, and for declaring UDP-specific multicast API.
+
+* class :cpp:class:`UdpSocketImpl`: This class subclasses ``UdpSocket``, and
+  provides a socket interface to ns3's implementation of UDP.
 
 * class :cpp:class:`UdpSocketFactory`: This is used by the layer-4 protocol
   instance to create UDP sockets.
+
+* class :cpp:class:`UdpSocketFactoryImpl`: This class deriving from ``SocketFactory``
+  implements the API for creating UDP sockets.
+
+* class :cpp:class:`UdpHeader`: This class contains fields corresponding to those
+  in a network UDP header (port numbers, payload size, checksum) as well as methods
+  for serialization to and deserialization from a byte buffer.
+
+* class :cpp:class:`UdpL4Protocol`: This is a subclass of ``IpL4Protocol`` and
+  provides an implementation of the UDP protocol.
 
 ns-3 UDP
 ********
@@ -45,8 +58,8 @@ Usage
 In many cases, usage of UDP is set at the application layer by telling
 the |ns3| application which kind of socket factory to use.
 
-Using the helper functions defined in ``src/applications/helper`` and
-``src/network/helper``, here is how one would create a UDP receiver::
+Using the helper functions defined in ``src/applications/helper``, here
+is how one would create a UDP receiver::
 
   // Create a packet sink on the receiver
   uint16_t port = 50000;
@@ -69,7 +82,15 @@ UDP::
 For users who wish to have a pointer to the actual socket (so that
 socket operations like ``Bind()``, setting socket options, etc. can be
 done on a per-socket basis), UDP sockets can be created by using the 
-``Socket::CreateSocket()`` method. 
+``Socket::CreateSocket()`` method as given below:
+
+  Ptr<Node> node = CreateObject<Node> ();
+  InternetStackHelper internet;
+  internet.Install (node);
+
+  Ptr<SocketFactory> socketFactory = node->GetObject<UdpSocketFactory> ();
+  Ptr<Socket> socket = socketFactory->CreateSocket ();
+  socket->Bind (InetSocketAddress (Ipv4Address::GetAny (), 80));
 
 Once a UDP socket is created, we do not need an explicit connection setup before
 sending and receiving data. Being a connectionless protocol, all we need to do
@@ -81,9 +102,9 @@ endpoint for this socket.
 At the end of data transmission, the socket is closed using the ``Socket::Close()``.
 It returns a 0 on success and -1 on failure. 
 
-Please note that applications usually create the sockets automatically,
-and so it is not straightforward to create sockets. Please refer to the source
-code of your preferred application to discover how and when it creates the socket.
+Please note that applications usually create the sockets automatically. Please
+refer to the source code of your preferred application to discover how and
+when it creates the socket.
 
 
 UDP Socket interaction and interface with Application layer
@@ -94,8 +115,9 @@ and how the interface is used to interact with the socket itself.
 **Socket APIs for UDP connections**:
 
 *Connect()*
-  Set the remote endpoint, and try to connect to it. If the remote address is valid,
-  this method makes a callback to *ConnectionSucceeded*.
+  Set the remote endpoint, which is used by ``Send()`` when it is called instead 
+  of ``SendTo()`` by the user. If the remote address is valid, this method makes
+  a callback to *ConnectionSucceeded*.
 
 *Bind()*
   Bind the socket to an address, or to a general endpoint. A general endpoint
@@ -110,7 +132,10 @@ and how the interface is used to interact with the socket itself.
   Same as ``Bind()``, but for IPv6.
 
 *BindToNetDevice()*
-  Bind the socket to the specified ``NetDevice``, creating a general endpoint.
+  Bind the socket to the specified ``NetDevice``.If set on a socket, this option
+  will force packets to leave the bound device regardless of the device that IP
+  routing would naturally choose. In the receive direction, only packets received
+  from the bound interface will be delivered.
 
 *ShutdownSend()*
   Signals the termination of send, or in other words, prevents data from being added
@@ -178,8 +203,7 @@ The following test cases have been provided for UDP implementation in the
 Limitations
 +++++++++++
 
-* UDP_CORK, MSG_DONTROUTE, path MTU discovery control (e.g. IP_MTU_DISCOVER)
-  are not presently part of this implementation.
-* MTU handling is also weak in ns-3 for the moment; it is best to send
-  datagrams that do not exceed 1500 byte MTU (e.g. 1472 byte UDP datagrams).
-* Not all socket API callbacks are supported.
+* UDP_CORK is presently not the part of this implementation.
+* ``NotifyNormalClose``, ``NotifyErrorClose``, ``NotifyConnectionRequest`` and
+  ``NotifyNewConnectionCreated`` are the socket API callbacks which are not
+  supported in the implementation.
