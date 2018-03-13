@@ -82,7 +82,7 @@ UDP::
 For users who wish to have a pointer to the actual socket (so that
 socket operations like ``Bind()``, setting socket options, etc. can be
 done on a per-socket basis), UDP sockets can be created by using the 
-``Socket::CreateSocket()`` method as given below:
+``Socket::CreateSocket()`` method as given below::
 
   Ptr<Node> node = CreateObject<Node> ();
   InternetStackHelper internet;
