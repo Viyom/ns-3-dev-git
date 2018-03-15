@@ -26,13 +26,13 @@ Here are the important abstract base classes:
   implementations, and for declaring UDP-specific multicast API.
 
 * class :cpp:class:`UdpSocketImpl`: This class subclasses ``UdpSocket``, and
-  provides a socket interface to ns3's implementation of UDP.
+  provides a socket interface to ns-3's implementation of UDP.
 
 * class :cpp:class:`UdpSocketFactory`: This is used by the layer-4 protocol
   instance to create UDP sockets.
 
-* class :cpp:class:`UdpSocketFactoryImpl`: This class deriving from ``SocketFactory``
-  implements the API for creating UDP sockets.
+* class :cpp:class:`UdpSocketFactoryImpl`: This class is derived from ``SocketFactory``
+  and implements the API for creating UDP sockets.
 
 * class :cpp:class:`UdpHeader`: This class contains fields corresponding to those
   in a network UDP header (port numbers, payload size, checksum) as well as methods
@@ -115,9 +115,9 @@ and how the interface is used to interact with the socket itself.
 **Socket APIs for UDP connections**:
 
 *Connect()*
-  Set the remote endpoint, which is used by ``Send()`` when it is called instead 
-  of ``SendTo()`` by the user. If the remote address is valid, this method makes
-  a callback to *ConnectionSucceeded*.
+  This is called when ``Send()`` is used instead of ``SendTo()`` by the user.
+  It sets the address of the remote endpoint which is used by ``Send()``. If the
+  remote address is valid, this method makes a callback to *ConnectionSucceeded*.
 
 *Bind()*
   Bind the socket to an address, or to a general endpoint. A general endpoint
@@ -132,7 +132,7 @@ and how the interface is used to interact with the socket itself.
   Same as ``Bind()``, but for IPv6.
 
 *BindToNetDevice()*
-  Bind the socket to the specified ``NetDevice``.If set on a socket, this option
+  Bind the socket to the specified ``NetDevice``. If set on a socket, this option
   will force packets to leave the bound device regardless of the device that IP
   routing would naturally choose. In the receive direction, only packets received
   from the bound interface will be delivered.
@@ -205,5 +205,4 @@ Limitations
 
 * UDP_CORK is presently not the part of this implementation.
 * ``NotifyNormalClose``, ``NotifyErrorClose``, ``NotifyConnectionRequest`` and
-  ``NotifyNewConnectionCreated`` are the socket API callbacks which are not
-  supported in the implementation.
+  ``NotifyNewConnectionCreated`` socket API callbacks are not supported.
