@@ -675,6 +675,18 @@ protected:
   }
 
   /**
+   * \brief Tracks the inflated congestion window changes
+   *
+   * \param oldValue old value
+   * \param newValue new value
+   */
+  virtual void CWndInflTrace (uint32_t oldValue, uint32_t newValue)
+  {
+    NS_UNUSED (oldValue);
+    NS_UNUSED (newValue);
+  }
+
+  /**
    * \brief Rtt changes
    *
    * This applies only for sender socket.

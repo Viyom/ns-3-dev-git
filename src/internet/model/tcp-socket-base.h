@@ -171,6 +171,7 @@ public:
 
   // Congestion control
   TracedValue<uint32_t>  m_cWnd             {0}; //!< Congestion window
+  TracedValue<uint32_t>  m_cWndInfl         {0}; //!< Inflated congestion window trace (used only for backward compatibility purpose)
   TracedValue<uint32_t>  m_ssThresh         {0}; //!< Slow start threshold
   uint32_t               m_initialCWnd      {0}; //!< Initial cWnd value
   uint32_t               m_initialSsThresh  {0}; //!< Initial Slow Start Threshold value
@@ -458,6 +459,11 @@ public:
   TracedCallback<uint32_t, uint32_t> m_cWndTrace;
 
   /**
+   * \brief Callback pointer for cWndInfl trace chaining
+   */
+  TracedCallback<uint32_t, uint32_t> m_cWndInflTrace;
+
+  /**
    * \brief Callback pointer for ssTh trace chaining
    */
   TracedCallback<uint32_t, uint32_t> m_ssThTrace;
@@ -483,6 +489,13 @@ public:
    * \param newValue new cWnd value
    */
   void UpdateCwnd (uint32_t oldValue, uint32_t newValue);
+
+  /**
+   * \brief Callback function to hook to TcpSocketState inflated congestion window
+   * \param oldValue old cWndInfl value
+   * \param newValue new cWndInfl value
+   */
+  void UpdateCwndInfl (uint32_t oldValue, uint32_t newValue);
 
   /**
    * \brief Callback function to hook to TcpSocketState slow start threshold
@@ -1249,11 +1262,6 @@ protected:
 
   // Pacing related variable
   Timer m_pacingTimer {Timer::REMOVE_ON_DESTROY}; //!< Pacing Event
-
-  /**
-   * \brief Inflated congestion window trace (not used in the real code, deprecated)
-   */
-  TracedValue<uint32_t> m_cWndInfl {0};
 };
 
 /**

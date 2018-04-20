@@ -199,6 +199,8 @@ TcpGeneralTest::DoRun (void)
   m_senderSocket->SetUpdateRttHistoryCb (MakeCallback (&TcpGeneralTest::UpdateRttHistoryCb, this));
   m_senderSocket->TraceConnectWithoutContext ("CongestionWindow",
                                               MakeCallback (&TcpGeneralTest::CWndTrace, this));
+  m_senderSocket->TraceConnectWithoutContext ("CongestionWindowInflated",
+                                              MakeCallback (&TcpGeneralTest::CWndInflTrace, this));
   m_senderSocket->TraceConnectWithoutContext ("SlowStartThreshold",
                                               MakeCallback (&TcpGeneralTest::SsThreshTrace, this));
   m_senderSocket->TraceConnectWithoutContext ("CongState",
