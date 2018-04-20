@@ -1505,8 +1505,7 @@ TcpSocketBase::EnterRecovery ()
   // compatibility with old ns-3 versions
   uint32_t bytesInFlight = m_sackEnabled ? BytesInFlight () : BytesInFlight () + m_tcb->m_segmentSize;
   m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, bytesInFlight);
-  m_recoveryOps->EnterRecovery (m_tcb);
-  m_tcb->m_cWndInfl = m_tcb->m_ssThresh + m_dupAckCount * m_tcb->m_segmentSize;
+  m_recoveryOps->EnterRecovery (m_tcb, m_sackEnabled, m_dupAckCount);
 
   NS_LOG_INFO (m_dupAckCount << " dupack. Enter fast recovery mode." <<
                "Reset cwnd to " << m_tcb->m_cWnd << ", ssthresh to " <<
@@ -1544,15 +1543,6 @@ TcpSocketBase::DupAck ()
       ++m_dupAckCount;
     }
 
-  if (!m_sackEnabled && m_tcb->m_congState == TcpSocketState::CA_RECOVERY)
-    {
-      // If we are in recovery and we receive a dupack, one segment
-      // has left the network. This is equivalent to a SACK of one block.
-      m_txBuffer->AddRenoSack ();
-
-      m_tcb->m_cWndInfl += m_tcb->m_segmentSize;
-    }
-
   if (m_tcb->m_congState == TcpSocketState::CA_OPEN)
     {
       // From Open we go Disorder
@@ -1566,8 +1556,14 @@ TcpSocketBase::DupAck ()
     }
 
   if (m_tcb->m_congState == TcpSocketState::CA_RECOVERY)
-    { // Increase cwnd for every additional dupack (RFC2582, sec.3 bullet #3)
-      m_recoveryOps->DoRecovery ();
+    {
+      if (!m_sackEnabled)
+      {
+        // If we are in recovery and we receive a dupack, one segment
+        // has left the network. This is equivalent to a SACK of one block.
+        m_txBuffer->AddRenoSack ();
+      }
+      m_recoveryOps->DoRecovery (m_tcb, m_sackEnabled);
       NS_LOG_INFO (m_dupAckCount << " Dupack received in fast recovery mode."
                    "Increase cwnd to " << m_tcb->m_cWnd);
     }
@@ -1770,8 +1766,7 @@ TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpd
           m_tcb->m_cWndInfl = SafeSubtraction (m_tcb->m_cWndInfl, bytesAcked);
           if (segsAcked >= 1)
             {
-              m_tcb->m_cWndInfl += m_tcb->m_segmentSize;
-              m_recoveryOps->DoRecovery ();
+              m_recoveryOps->DoRecovery (m_tcb, m_sackEnabled);
             }
 
           // This partial ACK acknowledge the fact that one segment has been
@@ -1892,13 +1887,7 @@ TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpd
           if (exitedFastRecovery)
             {
               NewAck (ackNumber, true);
-              // Follow NewReno procedures to exit FR if SACK is disabled
-              // (RFC2582 sec.3 bullet #5 paragraph 2, option 2)
-              m_tcb->m_cWndInfl = m_tcb->m_ssThresh.Get ();
-              // For SACK connections, we maintain the cwnd = ssthresh. In fact,
-              // this ACK was received in RECOVERY phase, not in OPEN. So we
-              // are not allowed to increase the window
-              m_recoveryOps->ExitRecovery ();
+              m_recoveryOps->ExitRecovery (m_tcb, m_sackEnabled);
               NS_LOG_DEBUG ("Leaving Fast Recovery; BytesInFlight() = " <<
                             BytesInFlight () << "; cWnd = " << m_tcb->m_cWnd);
             }

@@ -84,19 +84,37 @@ ClassicRecovery::~ClassicRecovery (void)
 }
 
 void
-ClassicRecovery::EnterRecovery (Ptr<TcpSocketState> tcb)
+ClassicRecovery::EnterRecovery (Ptr<TcpSocketState> tcb, bool isSackEnabled, uint32_t dupAckCount)
 {
   tcb->m_cWnd = tcb->m_ssThresh;
+  if (!isSackEnabled)
+    {
+      tcb->m_cWndInfl = tcb->m_ssThresh + dupAckCount * tcb->m_segmentSize;
+    }
+  else
+    {
+      tcb->m_cWndInfl = tcb->m_cWnd;
+    }
 }
 
 void
-ClassicRecovery::DoRecovery ()
+ClassicRecovery::DoRecovery (Ptr<TcpSocketState> tcb, bool isSackEnabled)
 {
+  if (!isSackEnabled)
+    {
+      tcb->m_cWndInfl += tcb->m_segmentSize;
+    }
 }
 
 void
-ClassicRecovery::ExitRecovery ()
+ClassicRecovery::ExitRecovery (Ptr<TcpSocketState> tcb, bool isSackEnabled)
 {
+  // Follow NewReno procedures to exit FR if SACK is disabled
+  // (RFC2582 sec.3 bullet #5 paragraph 2, option 2)
+  // For SACK connections, we maintain the cwnd = ssthresh. In fact,
+  // this ACK was received in RECOVERY phase, not in OPEN. So we
+  // are not allowed to increase the window
+  tcb->m_cWndInfl = tcb->m_ssThresh.Get ();
 }
 
 std::string

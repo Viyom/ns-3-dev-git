@@ -80,10 +80,14 @@ public:
    * The function is called when the TcpSocketState is changed to CA_RECOVERY.
    *
    * \param tcb internal congestion state
+   * \param isSackEnabled
+   * \param dupAckCount duplicate acknowldgement count
    */
-  virtual void EnterRecovery (Ptr<TcpSocketState> tcb)
+  virtual void EnterRecovery (Ptr<TcpSocketState> tcb, bool isSackEnabled, uint32_t dupAckCount)
   {
     NS_UNUSED (tcb);
+    NS_UNUSED (isSackEnabled);
+    NS_UNUSED (dupAckCount);
   }
 
   /**
@@ -93,9 +97,13 @@ public:
    * is set to CA_RECOVERY. It performs the necessary cwnd changes
    * as per the recovery algorithm.
    *
+   * \param tcb internal congestion state
+   * \param isSackEnabled
    */
-  virtual void DoRecovery ()
+  virtual void DoRecovery (Ptr<TcpSocketState> tcb, bool isSackEnabled)
   {
+    NS_UNUSED (tcb);
+    NS_UNUSED (isSackEnabled);
   }
 
   /**
@@ -104,10 +112,12 @@ public:
    * The function is called when the TcpSocketState is changed from CA_RECOVERY.
    *
    * \param tcb internal congestion state
-   * \param bytesInFlight total bytes in flight
+   * \param isSackEnabled
    */
-  virtual void ExitRecovery ()
+  virtual void ExitRecovery (Ptr<TcpSocketState> tcb, bool isSackEnabled)
   {
+    NS_UNUSED (tcb);
+    NS_UNUSED (isSackEnabled);
   }
 
   /**
@@ -147,11 +157,11 @@ public:
 
   std::string GetName () const;
 
-  virtual void EnterRecovery (Ptr<TcpSocketState> tcb);
+  virtual void EnterRecovery (Ptr<TcpSocketState> tcb, bool isSackEnabled, uint32_t dupAckCount);
 
-  virtual void DoRecovery ();
+  virtual void DoRecovery (Ptr<TcpSocketState> tcb, bool isSackEnabled);
 
-  virtual void ExitRecovery ();
+  virtual void ExitRecovery (Ptr<TcpSocketState> tcb, bool isSackEnabled);
 
   virtual Ptr<TcpRecoveryOps> Fork ();
 };
