@@ -86,11 +86,16 @@ public:
    *
    * \param tcb internal congestion state
    * \param dupAckCount duplicate acknowldgement count
+   * \param isSackEnabled true when SACK option is enabled
+   * \param unAckDataCount total bytes of data unacknowledged
    */
-  virtual void EnterRecovery (Ptr<TcpSocketState> tcb, uint32_t dupAckCount)
+  virtual void EnterRecovery (Ptr<TcpSocketState> tcb, uint32_t dupAckCount,
+                              bool isSackEnabled, uint32_t unAckDataCount)
   {
     NS_UNUSED (tcb);
     NS_UNUSED (dupAckCount);
+    NS_UNUSED (isSackEnabled);
+    NS_UNUSED (unAckDataCount);
   }
 
   /**
@@ -101,10 +106,17 @@ public:
    * as per the recovery algorithm.
    *
    * \param tcb internal congestion state
+   * \param lastAckedBytes bytes acknowledged in the last ACK
+   * \param lastSackedBytes bytes acknowledged via SACK in the last ACK
+   * \param isDupack true when received ACK is a duplicate ACK
    */
-  virtual void DoRecovery (Ptr<TcpSocketState> tcb)
+  virtual void DoRecovery (Ptr<TcpSocketState> tcb, uint32_t lastAckedBytes,
+                           uint32_t lastSackedBytes, bool isDupack)
   {
     NS_UNUSED (tcb);
+    NS_UNUSED (lastAckedBytes);
+    NS_UNUSED (lastSackedBytes);
+    NS_UNUSED (isDupack);
   }
 
   /**
@@ -118,6 +130,18 @@ public:
   virtual void ExitRecovery (Ptr<TcpSocketState> tcb)
   {
     NS_UNUSED (tcb);
+  }
+
+  /**
+   * \brief Keeps track of bytes sent during recovery phase
+   *
+   * The function is called whenever a data packet is sent during recovery phase.
+   *
+   * \param bytesSent bytes sent
+   */
+  virtual void UpdateBytesSent (uint32_t bytesSent)
+  {
+    NS_UNUSED (bytesSent);
   }
 
   /**
@@ -169,11 +193,15 @@ public:
 
   virtual std::string GetName () const override;
 
-  virtual void EnterRecovery (Ptr<TcpSocketState> tcb, uint32_t dupAckCount) override;
+  virtual void EnterRecovery (Ptr<TcpSocketState> tcb, uint32_t dupAckCount,
+                              bool isSackEnabled, uint32_t unAckDataCount) override;
 
-  virtual void DoRecovery (Ptr<TcpSocketState> tcb) override;
+  virtual void DoRecovery (Ptr<TcpSocketState> tcb, uint32_t lastAckedBytes,
+                           uint32_t lastSackedBytes,bool isDupack) override;
 
   virtual void ExitRecovery (Ptr<TcpSocketState> tcb) override;
+
+  virtual void UpdateBytesSent (uint32_t bytesSent) override;
 
   virtual Ptr<TcpRecoveryOps> Fork () override;
 };

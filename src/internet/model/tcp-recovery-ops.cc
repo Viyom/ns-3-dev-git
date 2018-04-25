@@ -85,14 +85,16 @@ ClassicRecovery::~ClassicRecovery (void)
 }
 
 void
-ClassicRecovery::EnterRecovery (Ptr<TcpSocketState> tcb, uint32_t dupAckCount)
+ClassicRecovery::EnterRecovery (Ptr<TcpSocketState> tcb, uint32_t dupAckCount,
+                                bool isSackEnabled, uint32_t unAckDataCount)
 {
   tcb->m_cWnd = tcb->m_ssThresh;
   tcb->m_cWndInfl = tcb->m_ssThresh + (dupAckCount * tcb->m_segmentSize);
 }
 
 void
-ClassicRecovery::DoRecovery (Ptr<TcpSocketState> tcb)
+ClassicRecovery::DoRecovery (Ptr<TcpSocketState> tcb, uint32_t lastAckedBytes,
+                             uint32_t lastSackedBytes,bool isDupack)
 {
   tcb->m_cWndInfl += tcb->m_segmentSize;
 }
@@ -106,6 +108,11 @@ ClassicRecovery::ExitRecovery (Ptr<TcpSocketState> tcb)
   // this ACK was received in RECOVERY phase, not in OPEN. So we
   // are not allowed to increase the window
   tcb->m_cWndInfl = tcb->m_ssThresh.Get ();
+}
+
+void
+ClassicRecovery::UpdateBytesSent (uint32_t bytesSent)
+{
 }
 
 std::string
