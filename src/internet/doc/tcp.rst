@@ -892,6 +892,48 @@ While in the recovery phase, the congestion window is inflated by segmentSize
 on arrival of every ACK when NewReno is used. The congestion window is kept
 same when SACK based loss recovery is used.
 
+Proportional Rate Reduction
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Proportional Rate Reduction (PRR) is the fast recovery algorithm described in
+RFC 6937 and currently used in Linux. The design of PRR helps in avoiding
+excess window adjustments and aims to keep the congestion window as close as
+possible to ssThresh.
+
+PRR updates the congestion window by comparing the values of bytesInFlight and
+ssThresh. If the value of bytesInFlight is greater than ssThresh, congestion window
+is updated as shown below:
+
+.. math::  sndcnt = CEIL(prrDelivered * ssThresh / RecoverFS) - prrOut
+.. math::  cWnd = pipe + sndcnt
+
+where ``RecoverFS`` is the value of bytesInFlight at the start of recovery phase,
+``prrDelivered`` is the total bytes delivered during recovery phase,
+``prrOut`` is the total bytes sent during recovery phase and
+``sndcnt`` represents the number of bytes to be sent in response to each ACK.
+
+Otherwise, the congestion window is updated by either using Conservative Reduction
+Bound (CRB) or Slow Start Reduction Bound (SSRB) with SSRB being the default
+Reduction Bound. Each Reduction Bound calculates a maximum data sending limit.
+For CRB, the limit is calculated as shown below:
+
+.. math::  limit = prrDelivered - prr out
+
+For SSRB, it is calculated as:
+
+.. math::  limit = MAX(prrDelivered - prrOut, DeliveredData) + MSS
+
+where ``DeliveredData`` represets the total number of bytes delivered to the
+receiver as indicated by the current ACK and ``MSS`` is the maximum segment size.
+
+After limit calculation, the cWnd is updated as given below:
+
+.. math::  sndcnt = MIN (ssThresh - pipe, limit)
+.. math::  cWnd = pipe + sndcnt
+
+More information (paper):  https://dl.acm.org/citation.cfm?id=2068832
+
+More information (RFC):  https://tools.ietf.org/html/rfc6937
+
 Adding a new loss recovery algorithm in ns-3
 ++++++++++++++++++++++++++++++++++++++++++++
 
