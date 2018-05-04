@@ -86,7 +86,7 @@ ClassicRecovery::~ClassicRecovery (void)
 
 void
 ClassicRecovery::EnterRecovery (Ptr<TcpSocketState> tcb, uint32_t dupAckCount,
-                                bool isSackEnabled, uint32_t unAckDataCount)
+                                uint32_t unAckDataCount, uint32_t lastSackedBytes)
 {
   tcb->m_cWnd = tcb->m_ssThresh;
   tcb->m_cWndInfl = tcb->m_ssThresh + (dupAckCount * tcb->m_segmentSize);
@@ -94,7 +94,7 @@ ClassicRecovery::EnterRecovery (Ptr<TcpSocketState> tcb, uint32_t dupAckCount,
 
 void
 ClassicRecovery::DoRecovery (Ptr<TcpSocketState> tcb, uint32_t lastAckedBytes,
-                             uint32_t lastSackedBytes,bool isDupack)
+                             uint32_t lastSackedBytes)
 {
   tcb->m_cWndInfl += tcb->m_segmentSize;
 }

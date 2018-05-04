@@ -111,7 +111,7 @@ PrrRecoveryTest::DoRun ()
   Ptr<PrrRecovery> recovery = CreateObject <PrrRecovery> ();
   recovery->SetAttribute ("ReductionBound", StringValue (m_reductionBound));
 
-  recovery->EnterRecovery (m_state, 3, true, m_unAckDataCount);
+  recovery->EnterRecovery (m_state, 3, m_unAckDataCount, 0);
 
   NS_TEST_ASSERT_MSG_GT_OR_EQ (m_state->m_cWnd.Get (), m_cWnd + m_segmentSize,
                                "There should be atleast one transmission on entering recovery");
@@ -125,7 +125,7 @@ PrrRecoveryTest::DoRun ()
   m_bytesInFlight += m_state->m_cWnd.Get () - m_cWnd;
   m_state->m_bytesInFlight = m_bytesInFlight;
   m_cWnd = m_state->m_cWnd.Get ();
-  recovery->DoRecovery (m_state, 0, m_lastSackedBytes, false);
+  recovery->DoRecovery (m_state, 0, m_lastSackedBytes);
 
   if (m_bytesInFlight > m_state->m_ssThresh)
     {

@@ -86,16 +86,16 @@ public:
    *
    * \param tcb internal congestion state
    * \param dupAckCount duplicate acknowldgement count
-   * \param isSackEnabled true when SACK option is enabled
    * \param unAckDataCount total bytes of data unacknowledged
+   * \param lastSackedBytes bytes acknowledged via SACK in the last ACK
    */
   virtual void EnterRecovery (Ptr<TcpSocketState> tcb, uint32_t dupAckCount,
-                              bool isSackEnabled, uint32_t unAckDataCount)
+                              uint32_t unAckDataCount, uint32_t lastSackedBytes)
   {
     NS_UNUSED (tcb);
     NS_UNUSED (dupAckCount);
-    NS_UNUSED (isSackEnabled);
     NS_UNUSED (unAckDataCount);
+    NS_UNUSED (lastSackedBytes);
   }
 
   /**
@@ -108,15 +108,13 @@ public:
    * \param tcb internal congestion state
    * \param lastAckedBytes bytes acknowledged in the last ACK
    * \param lastSackedBytes bytes acknowledged via SACK in the last ACK
-   * \param isDupack true when received ACK is a duplicate ACK
    */
   virtual void DoRecovery (Ptr<TcpSocketState> tcb, uint32_t lastAckedBytes,
-                           uint32_t lastSackedBytes, bool isDupack)
+                           uint32_t lastSackedBytes)
   {
     NS_UNUSED (tcb);
     NS_UNUSED (lastAckedBytes);
     NS_UNUSED (lastSackedBytes);
-    NS_UNUSED (isDupack);
   }
 
   /**
@@ -194,10 +192,10 @@ public:
   virtual std::string GetName () const override;
 
   virtual void EnterRecovery (Ptr<TcpSocketState> tcb, uint32_t dupAckCount,
-                              bool isSackEnabled, uint32_t unAckDataCount) override;
+                              uint32_t unAckDataCount, uint32_t lastSackedBytes) override;
 
   virtual void DoRecovery (Ptr<TcpSocketState> tcb, uint32_t lastAckedBytes,
-                           uint32_t lastSackedBytes,bool isDupack) override;
+                           uint32_t lastSackedBytes) override;
 
   virtual void ExitRecovery (Ptr<TcpSocketState> tcb) override;
 

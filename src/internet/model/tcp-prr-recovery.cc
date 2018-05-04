@@ -57,8 +57,6 @@ PrrRecovery::PrrRecovery (const PrrRecovery& recovery)
     m_prrDelivered (recovery.m_prrDelivered),
     m_prrOut (recovery.m_prrOut),
     m_recoveryFlightSize (recovery.m_recoveryFlightSize),
-    m_isSackEnabled (recovery.m_isSackEnabled),
-    m_dupAckCount (recovery.m_dupAckCount),
     m_previousSackedBytes (recovery.m_previousSackedBytes),
     m_reductionBoundMode (recovery.m_reductionBoundMode)
 {
@@ -72,44 +70,26 @@ PrrRecovery::~PrrRecovery (void)
 
 void
 PrrRecovery::EnterRecovery (Ptr<TcpSocketState> tcb, uint32_t dupAckCount,
-                            bool isSackEnabled, uint32_t unAckDataCount)
+                            uint32_t unAckDataCount, uint32_t lastSackedBytes)
 {
-  NS_ASSERT_MSG (isSackEnabled == true, "Cannot perform recovery as SACK is disabled. " <<
-                 "Enable SACK to perform recovery with prr");
   m_prrOut = 0;
   m_prrDelivered = 0;
-  m_isSackEnabled = isSackEnabled;
   m_recoveryFlightSize = unAckDataCount;
+  m_previousSackedBytes = lastSackedBytes;
 
-  DoRecovery (tcb, 0, 0, false);
+  DoRecovery (tcb, 0, lastSackedBytes);
 }
 
 void
 PrrRecovery::DoRecovery (Ptr<TcpSocketState> tcb, uint32_t lastAckedBytes,
-                         uint32_t lastSackedBytes, bool isDupack)
+                         uint32_t lastSackedBytes)
 {
   uint32_t lastDeliveredBytes;
-  if (m_isSackEnabled)
-    {
-      int changeInSackedBytes = int (lastSackedBytes - m_previousSackedBytes);
-      lastDeliveredBytes = lastAckedBytes + changeInSackedBytes > 0 ? lastAckedBytes + changeInSackedBytes : 0;
-      m_previousSackedBytes = lastSackedBytes;
-    }
-  else
-    {
-      if (isDupack)
-        {
-          lastDeliveredBytes = tcb->m_segmentSize;
-          m_dupAckCount++;
-        }
-      else
-        {
-          uint32_t bytesAcked = m_dupAckCount * tcb->m_segmentSize;
-          lastDeliveredBytes = lastAckedBytes > bytesAcked ? lastAckedBytes - bytesAcked : 0;
-          m_dupAckCount = 0;
-        }
-    }
+  int changeInSackedBytes = int (lastSackedBytes - m_previousSackedBytes);
+  lastDeliveredBytes = lastAckedBytes + changeInSackedBytes > 0 ? lastAckedBytes + changeInSackedBytes : 0;
+  m_previousSackedBytes = lastSackedBytes;
   m_prrDelivered += lastDeliveredBytes;
+
   int sendCount;
   if (tcb->m_bytesInFlight > tcb->m_ssThresh)
     {

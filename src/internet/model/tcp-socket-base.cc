@@ -1529,7 +1529,7 @@ TcpSocketBase::EnterRecovery ()
   // compatibility with old ns-3 versions
   uint32_t bytesInFlight = m_sackEnabled ? BytesInFlight () : BytesInFlight () + m_tcb->m_segmentSize;
   m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, bytesInFlight);
-  m_recoveryOps->EnterRecovery (m_tcb, m_dupAckCount, m_sackEnabled, UnAckDataCount ());
+  m_recoveryOps->EnterRecovery (m_tcb, m_dupAckCount, UnAckDataCount (), m_txBuffer->GetSacked ());
 
   NS_LOG_INFO (m_dupAckCount << " dupack. Enter fast recovery mode." <<
                "Reset cwnd to " << m_tcb->m_cWnd << ", ssthresh to " <<
@@ -1587,7 +1587,7 @@ TcpSocketBase::DupAck ()
         // has left the network. This is equivalent to a SACK of one block.
         m_txBuffer->AddRenoSack ();
       }
-      m_recoveryOps->DoRecovery (m_tcb, 0, m_txBuffer->GetLastSackedBytes (), true);
+      m_recoveryOps->DoRecovery (m_tcb, 0, m_txBuffer->GetSacked ());
       NS_LOG_INFO (m_dupAckCount << " Dupack received in fast recovery mode."
                    "Increase cwnd to " << m_tcb->m_cWnd);
     }
@@ -1790,7 +1790,7 @@ TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpd
           m_tcb->m_cWndInfl = SafeSubtraction (m_tcb->m_cWndInfl, bytesAcked);
           if (segsAcked >= 1)
             {
-              m_recoveryOps->DoRecovery (m_tcb, bytesAcked, m_txBuffer->GetLastSackedBytes (), false);
+              m_recoveryOps->DoRecovery (m_tcb, bytesAcked, m_txBuffer->GetSacked ());
             }
 
           // This partial ACK acknowledge the fact that one segment has been
