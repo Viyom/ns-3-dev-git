@@ -954,13 +954,15 @@ the class TcpRecoveryOps and are given below:
                            bool isSackEnabled, uint32_t dupAckCount,
                            uint32_t bytesInFlight, uint32_t lastDeliveredBytes);
   virtual void ExitRecovery (Ptr<TcpSocketState> tcb, uint32_t bytesInFlight);
+  virtual void UpdateBytesSent (uint32_t bytesSent);
   virtual Ptr<TcpRecoveryOps> Fork ();
 
 EnterRecovery is called when packet loss is detected and recovery is triggered.
 While in recovery phase, each time when an ACK arrives, DoRecovery is called which
 performs the necessary congestion window changes as per the recovery algorithm.
 ExitRecovery is called just prior to exiting recovery phase in order to perform the
-required congestion window ajustments.
+required congestion window ajustments. UpdateBytesSent is used to keep track of
+bytes sent and is called whenever a data packet is sent during recovery phase.
 
 Current limitations
 +++++++++++++++++++

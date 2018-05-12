@@ -63,6 +63,9 @@ public:
 
   virtual ~PrrRecovery (void);
 
+  /**
+   * \brief Reduction Bound variant (CRB or SSRB)
+   */
   typedef enum
   {
     CRB,                /**< Conservative Reduction Bound */
